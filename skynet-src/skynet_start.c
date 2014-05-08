@@ -6,7 +6,6 @@
 #include "skynet_module.h"
 #include "skynet_timer.h"
 #include "skynet_harbor.h"
-#include "skynet_group.h"
 #include "skynet_monitor.h"
 #include "skynet_socket.h"
 
@@ -73,8 +72,8 @@ free_monitor(struct monitor *m) {
 	}
 	pthread_mutex_destroy(&m->mutex);
 	pthread_cond_destroy(&m->cond);
-	free(m->m);
-	free(m);
+	skynet_free(m->m);
+	skynet_free(m);
 }
 
 static void *
@@ -141,12 +140,12 @@ static void
 _start(int thread) {
 	pthread_t pid[thread+3];
 
-	struct monitor *m = malloc(sizeof(*m));
+	struct monitor *m = skynet_malloc(sizeof(*m));
 	memset(m, 0, sizeof(*m));
 	m->count = thread;
 	m->sleep = 0;
 
-	m->m = malloc(thread * sizeof(struct skynet_monitor *));
+	m->m = skynet_malloc(thread * sizeof(struct skynet_monitor *));
 	int i;
 	for (i=0;i<thread;i++) {
 		m->m[i] = skynet_monitor_new();
@@ -188,7 +187,6 @@ _start_master(const char * master) {
 
 void 
 skynet_start(struct skynet_config * config) {
-	skynet_group_init();
 	skynet_harbor_init(config->harbor);
 	skynet_handle_init(config->harbor);
 	skynet_mq_init();
@@ -215,11 +213,6 @@ skynet_start(struct skynet_config * config) {
 		return;
 	}
 
-	ctx = skynet_context_new("localcast", NULL);
-	if (ctx == NULL) {
-		fprintf(stderr,"launch local cast error");
-		exit(1);
-	}
 	ctx = skynet_context_new("snlua", "launcher");
 	if (ctx) {
 		skynet_command(ctx, "REG", ".launcher");

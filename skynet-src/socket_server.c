@@ -1,3 +1,5 @@
+#include "skynet.h"
+
 #include "socket_server.h"
 #include "socket_poll.h"
 
@@ -125,8 +127,8 @@ union sockaddr_all {
 	struct sockaddr_in6 v6;
 };
 
-#define MALLOC malloc
-#define FREE free
+#define MALLOC skynet_malloc
+#define FREE skynet_free
 
 static void
 socket_keepalive(int fd) {

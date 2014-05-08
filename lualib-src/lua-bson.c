@@ -1,3 +1,5 @@
+#include "skynet_malloc.h"
+
 #include <lua.h>
 #include <lauxlib.h>
 
@@ -71,7 +73,7 @@ struct bson_reader {
 static inline void
 bson_destroy(struct bson *b) {
 	if (b->ptr != b->buffer) {
-		free(b->ptr);
+		skynet_free(b->ptr);
 	}
 }
 
@@ -91,10 +93,10 @@ bson_reserve(struct bson *b, int sz) {
 	} while (b->cap <= b->size + sz);
 
 	if (b->ptr == b->buffer) {
-		b->ptr = malloc(b->cap);
+		b->ptr = skynet_malloc(b->cap);
 		memcpy(b->ptr, b->buffer, b->size);
 	} else {
-		b->ptr = realloc(b->ptr, b->cap);
+		b->ptr = skynet_realloc(b->ptr, b->cap);
 	}
 }
 

@@ -1,12 +1,14 @@
 #ifndef SKYNET_H
 #define SKYNET_H
 
+#include "skynet_malloc.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
 #define PTYPE_TEXT 0
 #define PTYPE_RESPONSE 1
-#define PTYPE_MULTICAST 2
+#define PTYPE_MULTICAST_DEPRECATED 2
 #define PTYPE_CLIENT 3
 #define PTYPE_SYSTEM 4
 #define PTYPE_HARBOR 5
@@ -29,10 +31,11 @@ uint32_t skynet_queryname(struct skynet_context * context, const char * name);
 int skynet_send(struct skynet_context * context, uint32_t source, uint32_t destination , int type, int session, void * msg, size_t sz);
 int skynet_sendname(struct skynet_context * context, const char * destination , int type, int session, void * msg, size_t sz);
 
-void skynet_forward(struct skynet_context *, uint32_t destination);
 int skynet_isremote(struct skynet_context *, uint32_t handle, int * harbor);
 
 typedef int (*skynet_cb)(struct skynet_context * context, void *ud, int type, int session, uint32_t source , const void * msg, size_t sz);
 void skynet_callback(struct skynet_context * context, void *ud, skynet_cb cb);
+
+uint32_t skynet_current_handle(void);
 
 #endif

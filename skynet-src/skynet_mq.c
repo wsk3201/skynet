@@ -1,7 +1,6 @@
 #include "skynet.h"
 #include "skynet_mq.h"
 #include "skynet_handle.h"
-#include "skynet_multicast.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,7 +83,7 @@ skynet_globalmq_pop() {
 
 struct message_queue * 
 skynet_mq_create(uint32_t handle) {
-	struct message_queue *q = malloc(sizeof(*q));
+	struct message_queue *q = skynet_malloc(sizeof(*q));
 	q->handle = handle;
 	q->cap = DEFAULT_QUEUE_SIZE;
 	q->head = 0;
@@ -93,15 +92,15 @@ skynet_mq_create(uint32_t handle) {
 	q->in_global = MQ_IN_GLOBAL;
 	q->release = 0;
 	q->lock_session = 0;
-	q->queue = malloc(sizeof(struct skynet_message) * q->cap);
+	q->queue = skynet_malloc(sizeof(struct skynet_message) * q->cap);
 
 	return q;
 }
 
 static void 
 _release(struct message_queue *q) {
-	free(q->queue);
-	free(q);
+	skynet_free(q->queue);
+	skynet_free(q);
 }
 
 uint32_t 
@@ -149,7 +148,7 @@ skynet_mq_pop(struct message_queue *q, struct skynet_message *message) {
 
 static void
 expand_queue(struct message_queue *q) {
-	struct skynet_message *new_queue = malloc(sizeof(struct skynet_message) * q->cap * 2);
+	struct skynet_message *new_queue = skynet_malloc(sizeof(struct skynet_message) * q->cap * 2);
 	int i;
 	for (i=0;i<q->cap;i++) {
 		new_queue[i] = q->queue[(q->head + i) % q->cap];
@@ -158,7 +157,7 @@ expand_queue(struct message_queue *q) {
 	q->tail = q->cap;
 	q->cap *= 2;
 	
-	free(q->queue);
+	skynet_free(q->queue);
 	q->queue = new_queue;
 }
 
@@ -240,10 +239,10 @@ skynet_mq_unlock(struct message_queue *q) {
 
 void 
 skynet_mq_init() {
-	struct global_queue *q = malloc(sizeof(*q));
+	struct global_queue *q = skynet_malloc(sizeof(*q));
 	memset(q,0,sizeof(*q));
-	q->queue = malloc(MAX_GLOBAL_MQ * sizeof(struct message_queue *));
-	q->flag = malloc(MAX_GLOBAL_MQ * sizeof(bool));
+	q->queue = skynet_malloc(MAX_GLOBAL_MQ * sizeof(struct message_queue *));
+	q->flag = skynet_malloc(MAX_GLOBAL_MQ * sizeof(bool));
 	memset(q->flag, 0, sizeof(bool) * MAX_GLOBAL_MQ);
 	Q=q;
 }
@@ -287,13 +286,7 @@ _drop_queue(struct message_queue *q) {
 	int s = 0;
 	while(!skynet_mq_pop(q, &msg)) {
 		++s;
-		int type = msg.sz >> HANDLE_REMOTE_SHIFT;
-		if (type == PTYPE_MULTICAST) {
-			assert((msg.sz & HANDLE_MASK) == 0);
-			skynet_multicast_dispatch((struct skynet_multicast_message *)msg.data, NULL, NULL);
-		} else {
-			free(msg.data);
-		}
+		skynet_free(msg.data);
 	}
 	_release(q);
 	return s;
